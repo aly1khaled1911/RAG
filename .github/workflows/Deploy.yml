@@ -22,3 +22,4 @@ jobs:
             cd ${{ secrets.SERVER_PATH }}
             git pull origin main
             echo "Deploy finished"
+          debug: true
