@@ -194,7 +194,7 @@ async def search_index(request : Request , project_id : int , search_request : S
     # If there's results already we make it dictionaties for score and the text itself
     results = [result.dict() for result in results]
 
-    # We then return a Json response with the results and a flad indicating the operation success
+    # We then return a JSOM response with the results and a flad indicating the operation success
     return JSONResponse(
         content = {
             "signal" : ResponseSignal.VECTORDB_SEARCH_SUCCESS.value,
