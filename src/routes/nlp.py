@@ -182,7 +182,7 @@ async def search_index(request : Request , project_id : int , search_request : S
     results = await nlp_controller.search_vector_db_collection(project=project,text = search_request.text , limit = search_request.limit)
     
 
-    # If there's not any search result , this will return a Json Response with bad request
+    # If there's not any search result , this will return a JSON Response with bad request
     if not results:
         return JSONResponse(
             status_code = status.HTTP_400_BAD_REQUEST,
