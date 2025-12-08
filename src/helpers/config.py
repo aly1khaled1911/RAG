@@ -39,7 +39,12 @@ class Settings(BaseSettings):
 
     PRIMARY_LANGUAGE : str = "en"
     DEFAULT_LANGUAGE : str = "en"
+
     
+    SECRET : str = "686adc9e498f80364dd2a0fe8f248575"
+    ALGORITHM : str = "HS256"
+    EXPIRING_TIME : int = 600
+
     class Config:
         env_file='.env'
 
