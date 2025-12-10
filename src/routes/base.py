@@ -1,8 +1,10 @@
-from fastapi import FastAPI , APIRouter,Depends , Body
+from fastapi import FastAPI , APIRouter,Depends , Body , Request
 import os
 from helpers.config import get_settings , Settings
 from .schemas.base import PostScheme , UserLoginScheme , UserSchema
 from controllers import AuthController , BearerController
+from models.UserModel import UserModel
+from fastapi.responses import JSONResponse
 
 
 
@@ -44,19 +46,23 @@ posts = [
         "text":"here are koalas"
     }
 ]
-users = []
 
-def check_user(data : UserLoginScheme):
-    
-    for user in users:
-        if user.email == data.email and user.password == data.password:
-            return True
-        
-    return False
 
 @base_router.get("/posts")
 def get_posts():
     return {"data":posts}
+
+@base_router.post("/sign_up/{email}/{password}")
+async def sign_up(request : Request,email : str , password : str):
+    
+    user_model = UserModel(request.app.db_client)
+    
+    if await user_model.user_exists(email=email):
+        return {"info":"User already exists , try to login"}
+    
+    await user_model.create_user(email = email , password = password)
+    return {"info":"User Created"}
+
 
 @base_router.get("/posts/{id}")
 def get_single_post(id:int):
@@ -77,18 +83,13 @@ def add_post(post : PostScheme):
         "info": "post added"
     }
 
-@base_router.post("/user/signup")
-def user_signup(user : UserSchema = Body(default=None)):
-    
-    auth_controller = AuthController()
-    users.append(user)
-    return auth_controller.signJWT(user.email)
-
 @base_router.post("/user/login")
-def user_signup(user : UserLoginScheme = Body(default=None)):
+async def user_login(request : Request ,user : UserLoginScheme = Body(default=None)):
 
-    auth_controller = AuthController()    
-    if check_user(user):
+    user_model = UserModel(db_client=request.app.db_client)
+
+    if await user_model.check_credentials(email = user.email , password=user.password):
+        auth_controller = AuthController()
         return auth_controller.signJWT(user.email)
     else :
         return {"Info":"Invalid Login Details"}

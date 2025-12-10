@@ -7,7 +7,7 @@ class PostScheme(BaseModel):
     title : str = Field(default=None)
     content : str = Field(default = None)
     class config:
-        scheme_extra = {
+        json_scheme_extra = {
             "post_demo": {
                 "title": "some title about animals",
                 "content": "some content about animals"
@@ -21,7 +21,7 @@ class UserSchema(BaseModel):
     password: str = Field(...)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "fullname": "Joe Doe",
                 "email": "joe@xyz.com",
@@ -36,7 +36,7 @@ class UserLoginScheme(BaseModel):
     password : str = Field(default = None)
 
     class config:
-        the_scheme = {
+        json_schema_extra = {
             "user_demo": {
                 "email":"help@bekbrace.com",
                 "password":"123"

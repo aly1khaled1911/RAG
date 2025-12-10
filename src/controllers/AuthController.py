@@ -13,7 +13,7 @@ class AuthController(BaseController):
         self.JWT_Secret = self.app_settings.SECRET
         self.JWT_Algorithm = self.app_settings.ALGORITHM
     
-    def signJWT(self,UserID : str):
+    def signJWT(self,UserID : str ,):
         payload = {
             "UserID" : UserID,
             "expiry": time.time() + self.app_settings.EXPIRING_TIME
