@@ -16,7 +16,8 @@ class BearerController(HTTPBearer):
                 raise HTTPException(status_code = 403 , detail = "invalid Authentication Scheme")
             if not self.verify_jwt(credentials.credentials):
                 raise HTTPException(status_code = 403 , detail = "invalid or expired token")
-            return credentials.credentials
+            payload = AuthController().decodeJWT(credentials.credentials)
+            return payload
         else:
             raise HTTPException(status_code = 403 , detail = "invalid or expired token")
 

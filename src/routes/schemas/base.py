@@ -16,14 +16,13 @@ class PostScheme(BaseModel):
 
 
 class UserSchema(BaseModel):
-    fullname: str = Field(...)
     email: EmailStr = Field(...)
     password: str = Field(...)
+    role : str = Field(default = 'USER')
 
     class Config:
         json_schema_extra = {
             "example": {
-                "fullname": "Joe Doe",
                 "email": "joe@xyz.com",
                 "password": "any"
             }

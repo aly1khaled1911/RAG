@@ -1,5 +1,7 @@
 # Importing Base Controller to inherit from
 from .BaseController import BaseController
+from models.enums.RolesEnum import Roles
+
 
 
 import time
@@ -13,10 +15,11 @@ class AuthController(BaseController):
         self.JWT_Secret = self.app_settings.SECRET
         self.JWT_Algorithm = self.app_settings.ALGORITHM
     
-    def signJWT(self,UserID : str ,):
+    def signJWT(self,user_email : str ,user_role : Roles):
         payload = {
-            "UserID" : UserID,
-            "expiry": time.time() + self.app_settings.EXPIRING_TIME
+            "UserID" : user_email,
+            "Role":user_role.value,
+            "expiry": time.time() + self.app_settings.EXPIRING_TIME,
         }
         token =  jwt.encode(payload,self.JWT_Secret , self.JWT_Algorithm)
         return {"access token": token}
