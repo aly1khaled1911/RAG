@@ -4,6 +4,7 @@ import logging
 from routes.schemas.nlp import PushRequest , SearchRequest
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
+from models.AssetModel import AssetModel
 from controllers import NLPController
 from models import ResponseSignal
 from tqdm.auto import tqdm
@@ -180,7 +181,6 @@ async def search_index(request : Request , project_id : int , search_request : S
     
     # Search the vector database for relative results with cosine similarity to get relative texts
     results = await nlp_controller.search_vector_db_collection(project=project,text = search_request.text , limit = search_request.limit)
-    
 
     # If there's not any search result , this will return a JSON Response with bad request
     if not results:
@@ -205,9 +205,8 @@ async def search_index(request : Request , project_id : int , search_request : S
 # Making an endpoint post request for this router to answer the queries
 @nlp_router.get("/index/answer/{project_id}")
 
-
 #This is the function to answer the query
-async def search_index(request : Request , project_id : int , search_request : SearchRequest):
+async def answer_index(request : Request , project_id : int , search_request : SearchRequest):
 
     # Creating the project model to integrate with the database
     project_model = await ProjectModel.create_instance(
@@ -252,3 +251,35 @@ async def search_index(request : Request , project_id : int , search_request : S
                 "Full Prompt" : full_prompt
             }
         )
+
+@nlp_router.get("/get_all_crs/{project_id}")
+async def get_all_crs(request : Request, project_id : int):
+    
+    asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
+
+    assets = await asset_model.get_all_project_assets(asset_project_id=project_id)
+
+    return assets
+
+@nlp_router.get("/generate_stories/{asset_id}")
+async def generate_stories(request : Request , asset_id : int):
+
+    # Making an NLP Controller to integrate with the vector database
+    nlp_controller = NLPController(
+        vectordb_client= request.app.vectordb_client,
+        generation_client = request.app.generation_client,
+        embedding_client = request.app.embedding_client,
+        template_parser = request.app.template_parser
+        )
+
+    chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
+
+    chunk_data = await chunk_model.get_chunk_document_by_asset(asset_id=asset_id)
+
+    text = chunk_data.chunk_text
+
+    answer = await nlp_controller.answer_any_question(document=text)
+
+    return answer
+
+

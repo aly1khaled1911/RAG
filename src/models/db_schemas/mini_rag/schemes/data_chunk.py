@@ -13,6 +13,7 @@ class DataChunk(SQLAlchemyBase):
     chunk_id = Column(Integer , primary_key = True , autoincrement = True)
     chunk_uuid = Column(UUID(as_uuid = True),default = uuid.uuid4,unique = True , nullable = False)
 
+    chunk_type = Column(String , nullable = False , default = "Chunk")
     chunk_text = Column(String , nullable = False)
     chunk_metadata = Column(JSONB , nullable = False)
     chunk_order = Column(Integer, nullable = False)

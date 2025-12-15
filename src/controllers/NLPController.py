@@ -55,6 +55,7 @@ class NLPController(BaseController):
 
         # Now getting the texts of the chunks and the metadatas
         texts = [chunk.chunk_text for chunk in chunks]
+
         metadatas = [chunk.chunk_metadata for chunk in chunks]
 
         # Getting the vectors for each text in the texts list
@@ -158,3 +159,30 @@ class NLPController(BaseController):
 
         # Now to the user send back the answer , the full prompt and the chat history
         return answer , full_prompt , chat_history
+    
+    # This function is to answer the query of the user
+    async def answer_any_question(self , document : str):
+        
+        # Setting initial values for answer , full prompt and chat history
+        answer , chat_history = None , None
+        
+        # Setting the system promt with the template parser values , Defines assistant behavior
+        stories_prompt = self.template_parser.get("rag" , "stories_prompt")
+
+        # Setting the footer prompt with the template parser values , injecting the query of the user
+        story_footer_prompt = self.template_parser.get("rag" , "story_footer_prompt",{"document_text" : document})
+
+        # Construciton chat history if there's one
+        chat_history = [
+            self.generation_client.construct_prompt(
+                prompt = stories_prompt,
+                role = self.generation_client.enums.SYSTEM.value
+            )
+        ]
+        # Getting the answer from the LLM to send back to the user
+        answer = self.generation_client.generate_text(
+            prompt = story_footer_prompt,
+            chat_history = chat_history
+        )
+        # Now to the user send back the answer , the full prompt and the chat history
+        return answer

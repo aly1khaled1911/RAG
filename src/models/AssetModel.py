@@ -38,16 +38,13 @@ class AssetModel(BaseDataModel):
         return asset
 
     # A function to get all project assets from the database
-    async def get_all_project_assets(self , asset_project_id : str, asset_type : str):
+    async def get_all_project_assets(self , asset_project_id : str):
         
         # Making the db_client as our session to integrate with
         async with self.db_client() as session:
 
             # Preparing Statement to execute in the database
-            stmt = select(Asset).where(
-                Asset.asset_project_id == asset_project_id,
-                Asset.asset_type == asset_type
-            )
+            stmt = select(Asset).where(Asset.asset_project_id == asset_project_id)
             # Execute the statement to get results
             result = await session.execute(stmt)
 

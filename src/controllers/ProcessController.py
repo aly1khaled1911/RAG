@@ -2,7 +2,7 @@
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 
-from langchain_community.document_loaders import TextLoader, PyMuPDFLoader
+from langchain_community.document_loaders import TextLoader, PyMuPDFLoader , UnstructuredWordDocumentLoader
 from models import ProcessingEnums
 import os
 from typing import List
@@ -46,6 +46,11 @@ class ProcessController(BaseController):
 
         if file_ext == ProcessingEnums.PDF.value:
             return PyMuPDFLoader(file_path)
+        
+        if file_ext == ProcessingEnums.DOCX.value:
+            return UnstructuredWordDocumentLoader(file_path , mode = 'elements')
+        
+        
         return None
 
     # Loading the file Content
@@ -61,13 +66,25 @@ class ProcessController(BaseController):
 
     # Processing the file content by getting the output of the loader , then process its text and metadata
     # And return the output in chunks
-    def process_file_content(self,file_content : list ,file_id : str , chunk_size : int=100 , overlap_size : int=20):
+    def process_file_content_chunks(self,file_content : list ,file_id : str , chunk_size : int=100 , overlap_size : int=20):
         file_content_text = [ rec.page_content for rec in file_content ]
         file_content_metadata = [ rec.metadata for rec in file_content ]
 #       chunks=text_splitter.create_documents(file_content_text,metadatas = file_content_metadata)
         chunks = self.process_simpler_splitter(texts=file_content_text,metadatas=file_content_metadata,chunk_size=chunk_size)
         return chunks
-    
+
+
+    # Processing the file content by getting the output of the loader , then process its text and metadata
+    # And return the output in chunks
+    def process_file_content_all(self,file_content : list ,file_id : str , chunk_size : int=100 , overlap_size : int=20):
+        file_content_text = [ rec.page_content for rec in file_content ]
+        file_content_metadata = [ rec.metadata for rec in file_content ]
+#       chunks=text_splitter.create_documents(file_content_text,metadatas = file_content_metadata)
+        chunks = self.process_not_splitting(texts=file_content_text,metadatas=file_content_metadata)
+        return chunks
+
+
+
     # Processing with a simple splitter by just chunking over each new paragraph with \n
     def process_simpler_splitter(self , texts : List[str],metadatas:List[dict],chunk_size : int,splitter_tag = "\n"):
 
@@ -104,3 +121,13 @@ class ProcessController(BaseController):
 
         # Now return all created chunks
         return chunks
+    
+    # Processing the whole file at once by just chunking over each new paragraph with \n
+    def process_not_splitting(self , texts : List[str],metadatas:List[dict],splitter_tag = "\n"):
+
+        # We make all pages in one text
+        full_text = splitter_tag.join(texts)
+
+        chunk = Document(page_content = full_text , metadata=metadatas[0])
+
+        return chunk
