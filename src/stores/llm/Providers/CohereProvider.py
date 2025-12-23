@@ -111,7 +111,7 @@ class CoHereProvider(LLMInterface):
         input_type = CoHereEnums.DOCUMENT.value
         if document_type == DocumentTypeEnums.QUERY.value:
             input_type = CoHereEnums.QUERY.value
-        
+
         # Get the embedding from the LLM by sending the client the text
         response = self.client.embed(
             model=self.embedding_model_id,

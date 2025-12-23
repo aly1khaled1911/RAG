@@ -59,7 +59,21 @@ class ChunkModel(BaseDataModel):
 
                 # Prepare the statement and execute the query to get the chunk
                 result = await session.execute(select(DataChunk).where(DataChunk.chunk_id == chunk_id))
-                chunk = result.scalar_get_one_or_none()
+                chunk = result.scalar_one_or_none()
+        return chunk
+    
+    async def get_chunk_document_by_asset(self,asset_id: str):
+
+        # Making the db_client as our session to integrate with
+        async with self.db_client() as session:
+
+            # Now begin the session to get the chunk into the database
+            async with session.begin():
+
+                # Prepare the statement and execute the query to get the chunk
+                result = await session.execute(select(DataChunk).where(DataChunk.chunk_asset_id == asset_id,
+                                                                       DataChunk.chunk_type == "Document"))
+                chunk = result.scalar_one_or_none()
         return chunk
         
 
@@ -102,7 +116,7 @@ class ChunkModel(BaseDataModel):
     
 
     # A function to get all project related chunks
-    async def get_project_chunks(self,project_id : ObjectId , page_no : int = 1 , page_size : int = 50):
+    async def get_project_chunks(self,project_id : ObjectId , page_no : int = 1 , page_size : int = 100):
         
         # Making the db_client as our session to integrate with
         async with self.db_client() as session:
@@ -111,7 +125,7 @@ class ChunkModel(BaseDataModel):
             async with session.begin():
 
                 # Perpare the get statement to get chunks
-                stmt = select(DataChunk).where(DataChunk.chunk_project_id == project_id).offset((page_no -1) * page_size).limit(page_size)
+                stmt = select(DataChunk).where(DataChunk.chunk_project_id == project_id , DataChunk.chunk_type == "Chunk").offset((page_no -1) * page_size).limit(page_size)
                 
                 # Executing the statement and save the result
                 result = await session.execute(stmt)
@@ -131,7 +145,8 @@ class ChunkModel(BaseDataModel):
         async with self.db_client() as session:
 
             # Prepare the statement to count the chunks in a single project
-            count_sql = select(func.count(DataChunk.chunk_id)).where(DataChunk.chunk_project_id == project_id)
+            count_sql = select(func.count(DataChunk.chunk_id)).where(DataChunk.chunk_project_id == project_id,
+                                                                     DataChunk.chunk_type == "Chunk")
             
             # Execute the statement and return the number of the cunks in record count then return them
             records_count = await session.execute(count_sql)

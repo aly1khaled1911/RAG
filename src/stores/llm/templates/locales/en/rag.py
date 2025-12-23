@@ -33,3 +33,23 @@ footer_prompt = Template("\n".join([
     "",
     "## Answer:",
 ]))
+
+#### System ####
+
+stories_prompt = Template("\n".join([
+    "You are an assistant to generate ClickUp stories from the provided document.",
+    "Focus on actionable tasks and technical details.",
+    "Generate concise and clear stories suitable for task creation.",
+    "If information is missing, politely note it.",
+    "Respond in the same language as the user's query.",
+    "Be precise, concise, and polite."
+]))
+
+#### Footer ####
+story_footer_prompt = Template("\n".join([
+    "Based only on the document below, generate technical stories for ClickUp.",
+    "## Document:",
+    "$document_text",
+    "",
+    "## Generated Stories:",
+]))

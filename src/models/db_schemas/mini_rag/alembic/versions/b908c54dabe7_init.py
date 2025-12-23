@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 252b738898ac
-Revises: 1c5d8d4a03d2
-Create Date: 2025-12-02 13:12:03.487727
+Revision ID: b908c54dabe7
+Revises: 
+Create Date: 2025-12-15 12:05:38.303545
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '252b738898ac'
-down_revision: Union[str, None] = '1c5d8d4a03d2'
+revision: str = 'b908c54dabe7'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -47,6 +47,7 @@ def upgrade() -> None:
     op.create_table('chunks',
     sa.Column('chunk_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('chunk_uuid', sa.UUID(), nullable=False),
+    sa.Column('chunk_type', sa.String(), nullable=False),
     sa.Column('chunk_text', sa.String(), nullable=False),
     sa.Column('chunk_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('chunk_order', sa.Integer(), nullable=False),
