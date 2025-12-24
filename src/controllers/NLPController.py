@@ -56,6 +56,7 @@ class NLPController(BaseController):
         # Now getting the texts of the chunks and the metadatas
         texts = [chunk.chunk_text for chunk in chunks]
 
+        # Assign Metadatas for each chunk
         metadatas = [chunk.chunk_metadata for chunk in chunks]
 
         # Getting the vectors for each text in the texts list

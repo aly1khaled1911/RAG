@@ -1,5 +1,6 @@
-from fastapi import FastAPI , APIRouter,Depends ,UploadFile , status , Request
+from fastapi import FastAPI , APIRouter,Depends ,UploadFile , status , Request , File
 from fastapi.responses import JSONResponse
+from typing import List
 import os
 from helpers.config import get_settings , Settings
 from controllers import DataController , ProjectController , ProcessController , NLPController
@@ -24,64 +25,74 @@ data_router = APIRouter(
 
 # Making an endpoint post request for this router to upload the pdf file  , The function gets injected with settings
 @data_router.post("/upload/{project_id}")
-async def upload_data(request : Request,project_id: int, file : UploadFile,
+async def upload_data(request : Request,project_id: int, files : List[UploadFile] = File(...),
                       app_settings : Settings = Depends(get_settings)):
 
     # Creating project model to get project from db or create the project into the database
     project_model=await ProjectModel.create_instance(db_client=request.app.db_client)
+    
+    # Creating an asset model to store the file information into the database
+    asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
+
     project = await project_model.get_project_or_create_project(project_id=project_id)
     
     # Creating data controller instance to help make necessary operations for the file uploaded
     data_controller=DataController()
 
-    # Checking if the uploaded file in a valid file
-    is_valid , result_signal =data_controller.validate_uploaded_file(file=file)
+    uploaded_files = []
 
-    # If the file is not valid : return a json response with a bad request telling this file is invalid
-    if not is_valid:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "signal" : result_signal
-            }
+
+    for file in files:
+
+        # Checking if the uploaded file in a valid file
+        is_valid , result_signal =data_controller.validate_uploaded_file(file=file)
+
+        # If the file is not valid : return a json response with a bad request telling this file is invalid
+        if not is_valid:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal" : result_signal
+                }
+            )
+        
+        # Giving the file a unique ID and a unique path by generating them
+        file_path , file_id =data_controller.generate_unique_filepath(original_file_name=file.filename,project_id=project_id)
+        
+        # Opening the file and saving it chunk by chunk , and if there's an error return a json response with a bad request
+        try:
+            async with aiofiles.open(file_path,"wb") as f:
+                while chunk := await file.read(app_settings.FILE_DEFAULT_CHUNK_SIZE):
+                    await f.write(chunk)
+        except Exception as e:
+            logger.error(f"error while uploading file : {e}")
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal" : result_signal
+                }
+            )
+        
+        # Creating an Asset resource to be inserted into the database
+        asset_resource = Asset(
+            asset_project_id=project.project_id,
+            asset_type=AssetTypeEnum.FILE.value,
+            asset_name=file_id,
+            asset_size=os.path.getsize(file_path)
         )
-    
-    # Giving the file a unique ID and a unique path by generating them
-    file_path , file_id =data_controller.generate_unique_filepath(original_file_name=file.filename,project_id=project_id)
-    
-    # Opening the file and saving it chunk by chunk , and if there's an error return a json response with a bad request
-    try:
-        async with aiofiles.open(file_path,"wb") as f:
-            while chunk := await file.read(app_settings.FILE_DEFAULT_CHUNK_SIZE):
-                await f.write(chunk)
-    except Exception as e:
-        logger.error(f"error while uploading file : {e}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "signal" : result_signal
-            }
-        )
 
-    # Creating an asset model to store the file information into the database
-    asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
-    
-    # Creating an Asset resource to be inserted into the database
-    asset_resource = Asset(
-        asset_project_id=project.project_id,
-        asset_type=AssetTypeEnum.FILE.value,
-        asset_name=file_id,
-        asset_size=os.path.getsize(file_path)
-    )
-
-    # Using the asset_model created to insert the asset information into the database and return asset record as a flag
-    asset_record = await asset_model.create_asset(asset=asset_resource)
+        # Using the asset_model created to insert the asset information into the database and return asset record as a flag
+        asset_record = await asset_model.create_asset(asset=asset_resource)
+        uploaded_files.append({
+            "original_name": file.filename,
+            "file_id": str(asset_record.asset_id)
+        })
 
     # Return a json response to the API to tell the user the file is uploaded successfully
     return JSONResponse(
             content={
                 "signal" : ResponseSignal.FILE_UPLOAD_SUCCESS.value,
-                "file_id": str(asset_record.asset_id)
+                "files": uploaded_files
             }
         )
     
